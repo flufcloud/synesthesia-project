@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Record timestamped color labels while listening to music. Audio stays in your browser.">
+  <title>Music Color Recorder</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="page-header">
+      <p class="eyebrow">Private, in-browser annotation</p>
+      <h1>Music Color Recorder</h1>
+      <p class="intro">Choose an audio file, record the colors you perceive, then download the color data.</p>
+      <p class="privacy-note">Your audio stays on this device. This page does not upload or store it.</p>
+    </header>
+
+    <div class="workspace">
+      <section class="audio-panel" aria-labelledby="audio-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="audio-heading">Audio</h2>
+        </div>
+
+        <label class="file-button" for="audio-file">Choose audio file</label>
+        <input id="audio-file" class="visually-hidden" type="file" accept="audio/*">
+
+        <div class="file-details" aria-live="polite">
+          <span id="file-name">No file selected</span>
+          <span id="file-duration">—</span>
+        </div>
+
+        <audio id="audio-player" controls preload="metadata"></audio>
+
+        <div class="recording-status" aria-live="polite">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="recording-status">Choose an audio file to begin</span>
+        </div>
+
+        <div class="button-stack">
+          <button id="record-button" class="primary-button" type="button" disabled>Start recording</button>
+          <button id="download-button" class="secondary-button" type="button" disabled>Download color JSON</button>
+        </div>
+
+        <div class="sample-summary">
+          <span>Samples</span>
+          <strong id="sample-count">0</strong>
+        </div>
+      </section>
+
+      <section class="colors-panel" aria-labelledby="colors-heading">
+        <div class="colors-heading">
+          <div>
+            <p class="section-number">02</p>
+            <h2 id="colors-heading">Colors</h2>
+          </div>
+          <p>Click or drag through each field while the music plays.</p>
+        </div>
+
+        <div class="color-grid">
+          <article class="color-card" data-channel="primary">
+            <div class="color-card-heading">
+              <h3>Primary</h3>
+              <label class="null-toggle">
+                <input type="checkbox" data-null-toggle>
+                <span>No color</span>
+              </label>
+            </div>
+            <canvas class="color-field" data-color-field tabindex="0" aria-label="Primary color field"></canvas>
+            <div class="selected-color">
+              <span class="color-swatch" data-color-swatch></span>
+              <code data-color-label>#FF0000</code>
+            </div>
+          </article>
+
+          <article class="color-card" data-channel="secondary">
+            <div class="color-card-heading">
+              <h3>Secondary</h3>
+              <label class="null-toggle">
+                <input type="checkbox" data-null-toggle checked>
+                <span>No color</span>
+              </label>
+            </div>
+            <canvas class="color-field" data-color-field tabindex="0" aria-label="Secondary color field"></canvas>
+            <div class="selected-color">
+              <span class="color-swatch" data-color-swatch></span>
+              <code data-color-label>None</code>
+            </div>
+          </article>
+
+          <article class="color-card" data-channel="tertiary">
+            <div class="color-card-heading">
+              <h3>Tertiary</h3>
+              <label class="null-toggle">
+                <input type="checkbox" data-null-toggle checked>
+                <span>No color</span>
+              </label>
+            </div>
+            <canvas class="color-field" data-color-field tabindex="0" aria-label="Tertiary color field"></canvas>
+            <div class="selected-color">
+              <span class="color-swatch" data-color-swatch></span>
+              <code data-color-label>None</code>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <span>10 samples per second</span>
+      <span>Dataset format 5</span>
+      <span>Local files only</span>
+    </footer>
+  </main>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
