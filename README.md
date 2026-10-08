@@ -62,9 +62,9 @@ python3 tools/download_youtube_audio.py "https://www.youtube.com/watch?v=VIDEO_I
 
 Files are saved under `audio/downloads` by default with lowercase ASCII kebab-case names. Use `--output-dir PATH` to select another directory. Only download media you own or have permission to download.
 
-## Web collector
+## Web tools
 
-The static web version is in `docs/`. It keeps audio in the browser and downloads dataset-format-5 JSON locally.
+The static web version is in `docs/`. Its tabs provide the recorder and color show. Files remain in the browser, and the recorder downloads dataset-format-5 JSON locally.
 
 Preview it locally:
 

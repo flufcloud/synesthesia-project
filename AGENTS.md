@@ -70,6 +70,8 @@ Stage 1 and the first small stage 3 color-show prototype are currently in scope.
 - Keep the web collector separate from the native collector and color show.
 - Implement it as buildless static HTML, CSS, and JavaScript under `docs/` for GitHub Pages.
 - Keep the interface functional and minimal. Do not add introductory copy, privacy banners, numbered sections, or decorative footer text.
+- Use simple tabs to switch between the recorder and a browser version of the color show.
+- Require matching audio and color JSON files before enabling color-show playback.
 - Keep selected audio inside the visitor's browser; do not upload or store it remotely.
 - Match dataset format 5, including explicit null values for absent colors.
 - Sample colors at 10 Hz and let the visitor download the resulting JSON locally.

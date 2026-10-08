@@ -150,12 +150,310 @@ class ColorField {
   }
 }
 
+class ColorShow {
+  constructor() {
+    this.audioInput = document.querySelector("#show-audio-file");
+    this.dataInput = document.querySelector("#show-data-file");
+    this.audioName = document.querySelector("#show-audio-name");
+    this.dataName = document.querySelector("#show-data-name");
+    this.audio = document.querySelector("#show-audio");
+    this.playButton = document.querySelector("#show-play");
+    this.stopButton = document.querySelector("#show-stop");
+    this.progress = document.querySelector("#show-progress");
+    this.time = document.querySelector("#show-time");
+    this.status = document.querySelector("#show-status");
+    this.canvas = document.querySelector("#color-show-canvas");
+    this.context = this.canvas.getContext("2d");
+    this.audioFile = null;
+    this.audioUrl = null;
+    this.dataset = null;
+    this.ready = false;
+    this.displayedSample = null;
+
+    this.bindEvents();
+    new ResizeObserver(() => this.draw(this.displayedSample)).observe(this.canvas);
+    requestAnimationFrame(() => this.updatePlayback());
+  }
+
+  bindEvents() {
+    this.audioInput.addEventListener("change", () => this.loadAudio());
+    this.dataInput.addEventListener("change", () => this.loadData());
+    this.audio.addEventListener("loadedmetadata", () => this.validatePair());
+    this.audio.addEventListener("play", () => this.updateControls());
+    this.audio.addEventListener("pause", () => this.updateControls());
+    this.audio.addEventListener("ended", () => this.updateControls());
+    this.playButton.addEventListener("click", () => this.togglePlayback());
+    this.stopButton.addEventListener("click", () => this.stop());
+    this.progress.addEventListener("input", () => this.seek());
+  }
+
+  loadAudio() {
+    const [file] = this.audioInput.files;
+    if (!file) {
+      return;
+    }
+
+    this.pause();
+    if (this.audioUrl) {
+      URL.revokeObjectURL(this.audioUrl);
+    }
+    this.audioFile = file;
+    this.audioUrl = URL.createObjectURL(file);
+    this.audio.src = this.audioUrl;
+    this.audioName.textContent = file.name;
+    this.resetPair();
+  }
+
+  async loadData() {
+    const [file] = this.dataInput.files;
+    if (!file) {
+      return;
+    }
+
+    this.pause();
+    this.dataName.textContent = file.name;
+    try {
+      this.dataset = JSON.parse(await file.text());
+      this.validatePair();
+    } catch {
+      this.dataset = null;
+      this.resetPair();
+      this.setStatus("Could not read color data", true);
+    }
+  }
+
+  resetPair() {
+    this.ready = false;
+    this.playButton.disabled = true;
+    this.stopButton.disabled = true;
+    this.progress.disabled = true;
+    this.progress.value = 0;
+    this.displayedSample = null;
+    this.draw(null);
+    this.updateControls();
+    this.setStatus("Choose matching audio and color data files");
+  }
+
+  validatePair() {
+    this.resetPair();
+    if (!this.audioFile || !this.dataset || this.audio.readyState < 1) {
+      return;
+    }
+
+    const { audio, formatVersion, samples, sampling } = this.dataset;
+    if (!Number.isInteger(formatVersion) || formatVersion < 4) {
+      this.setStatus("Color data must use format version 4 or later", true);
+      return;
+    }
+    if (!audio || audio.fileName !== this.audioFile.name) {
+      this.setStatus(`Color data expects ${audio?.fileName || "another audio file"}`, true);
+      return;
+    }
+    if (!Number.isFinite(audio.durationSeconds) || Math.abs(audio.durationSeconds - this.audio.duration) > 0.5) {
+      this.setStatus("Audio duration does not match the color data", true);
+      return;
+    }
+    if (!Array.isArray(samples) || samples.length === 0) {
+      this.setStatus("Color data contains no samples", true);
+      return;
+    }
+    if (!sampling || !Number.isFinite(sampling.rateHz) || sampling.rateHz <= 0) {
+      this.setStatus("Color data has an invalid sampling rate", true);
+      return;
+    }
+
+    this.ready = true;
+    this.playButton.disabled = false;
+    this.stopButton.disabled = false;
+    this.progress.disabled = false;
+    this.setStatus("Ready");
+    this.updateControls();
+    this.updateFrame();
+  }
+
+  togglePlayback() {
+    if (!this.ready) {
+      return;
+    }
+
+    if (!this.audio.paused) {
+      this.pause();
+      return;
+    }
+    if (this.audio.currentTime >= this.audio.duration) {
+      this.audio.currentTime = 0;
+    }
+    this.audio.play().catch(() => this.setStatus("Could not play audio", true));
+  }
+
+  pause() {
+    this.audio.pause();
+    this.updateControls();
+  }
+
+  stop() {
+    this.pause();
+    this.audio.currentTime = 0;
+    this.updateFrame();
+  }
+
+  seek() {
+    if (!this.ready) {
+      return;
+    }
+
+    this.audio.currentTime = Number(this.progress.value) * this.audio.duration;
+    this.updateFrame();
+  }
+
+  updatePlayback() {
+    if (this.ready) {
+      this.updateFrame();
+    }
+    requestAnimationFrame(() => this.updatePlayback());
+  }
+
+  updateFrame() {
+    const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : 0;
+    this.progress.value = duration > 0 ? this.audio.currentTime / duration : 0;
+    this.time.textContent = `${formatTime(this.audio.currentTime)} / ${formatTime(duration)}`;
+    this.updateControls();
+
+    const sample = this.sampleAt(this.audio.currentTime);
+    if (sample?.timeSeconds === this.displayedSample?.timeSeconds) {
+      return;
+    }
+    this.displayedSample = sample;
+    this.draw(sample);
+  }
+
+  updateControls() {
+    this.playButton.textContent = this.audio.paused ? "Play" : "Pause";
+  }
+
+  sampleAt(time) {
+    const samples = this.dataset.samples;
+    let lower = 0;
+    let upper = samples.length;
+
+    while (lower < upper) {
+      const middle = Math.floor((lower + upper) / 2);
+      if (samples[middle].timeSeconds <= time) {
+        lower = middle + 1;
+      } else {
+        upper = middle;
+      }
+    }
+
+    const sample = samples[lower - 1];
+    const maximumGap = Math.max(0.2, 2 / this.dataset.sampling.rateHz);
+    return sample && time - sample.timeSeconds <= maximumGap ? sample : null;
+  }
+
+  draw(sample) {
+    const bounds = this.canvas.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) {
+      return;
+    }
+
+    const density = window.devicePixelRatio || 1;
+    this.canvas.width = Math.round(bounds.width * density);
+    this.canvas.height = Math.round(bounds.height * density);
+    this.context.setTransform(density, 0, 0, density, 0, 0);
+    this.context.fillStyle = "#000";
+    this.context.fillRect(0, 0, bounds.width, bounds.height);
+    if (!sample) {
+      return;
+    }
+
+    const centerX = bounds.width / 2;
+    const centerY = bounds.height / 2;
+    const dotRadius = Math.max(38, Math.min(68, Math.min(bounds.width, bounds.height) * 0.09));
+
+    if (sample.tertiary) {
+      const outerRadius = Math.hypot(bounds.width, bounds.height) / 2;
+      const gradient = this.context.createRadialGradient(
+        centerX,
+        centerY,
+        dotRadius * 2,
+        centerX,
+        centerY,
+        outerRadius,
+      );
+      gradient.addColorStop(0, colorWithAlpha(sample.tertiary, 0));
+      gradient.addColorStop(0.58, colorWithAlpha(sample.tertiary, 0.12));
+      gradient.addColorStop(1, colorWithAlpha(sample.tertiary, 0.9));
+      this.context.fillStyle = gradient;
+      this.context.fillRect(0, 0, bounds.width, bounds.height);
+    }
+
+    if (sample.secondary) {
+      const gradient = this.context.createRadialGradient(
+        centerX,
+        centerY,
+        dotRadius * 0.75,
+        centerX,
+        centerY,
+        dotRadius * 3.2,
+      );
+      gradient.addColorStop(0, colorWithAlpha(sample.secondary, 0.9));
+      gradient.addColorStop(0.45, colorWithAlpha(sample.secondary, 0.45));
+      gradient.addColorStop(1, colorWithAlpha(sample.secondary, 0));
+      this.context.fillStyle = gradient;
+      this.context.fillRect(0, 0, bounds.width, bounds.height);
+    }
+
+    if (sample.primary) {
+      this.context.save();
+      this.context.beginPath();
+      this.context.arc(centerX, centerY, dotRadius, 0, Math.PI * 2);
+      this.context.fillStyle = colorWithAlpha(sample.primary, 1);
+      this.context.shadowColor = colorWithAlpha(sample.primary, 0.55);
+      this.context.shadowBlur = 18;
+      this.context.fill();
+      this.context.restore();
+    }
+  }
+
+  setStatus(message, isError = false) {
+    this.status.textContent = message;
+    this.status.classList.toggle("is-error", isError);
+  }
+
+  destroy() {
+    if (this.audioUrl) {
+      URL.revokeObjectURL(this.audioUrl);
+    }
+  }
+}
+
 const colorFields = Object.fromEntries(
   [...document.querySelectorAll("[data-channel]")].map((card) => {
     const field = new ColorField(card);
     return [field.channel, field];
   }),
 );
+
+const colorShow = new ColorShow();
+
+for (const tab of document.querySelectorAll("[data-tab]")) {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.tab;
+    for (const button of document.querySelectorAll("[data-tab]")) {
+      const selected = button === tab;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", String(selected));
+      document.querySelector(`#${button.dataset.tab}`).hidden = !selected;
+    }
+
+    if (target === "show-view") {
+      audioPlayer.pause();
+      colorShow.draw(colorShow.displayedSample);
+    } else {
+      colorShow.pause();
+    }
+  });
+}
 
 audioInput.addEventListener("change", () => {
   const [selectedFile] = audioInput.files;
@@ -213,6 +511,7 @@ window.addEventListener("beforeunload", () => {
   if (audioUrl) {
     URL.revokeObjectURL(audioUrl);
   }
+  colorShow.destroy();
 });
 
 function startRecording() {
@@ -309,6 +608,13 @@ function rgbToHex(color) {
   return `#${[color.red, color.green, color.blue]
     .map((value) => value.toString(16).padStart(2, "0"))
     .join("")}`.toUpperCase();
+}
+
+function colorWithAlpha(color, alpha) {
+  const red = Math.round(clamp(color.red, 0, 1) * 255);
+  const green = Math.round(clamp(color.green, 0, 1) * 255);
+  const blue = Math.round(clamp(color.blue, 0, 1) * 255);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function formatTime(seconds) {
