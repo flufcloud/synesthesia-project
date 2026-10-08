@@ -162,6 +162,7 @@ class ColorShow {
     this.progress = document.querySelector("#show-progress");
     this.time = document.querySelector("#show-time");
     this.status = document.querySelector("#show-status");
+    this.warning = document.querySelector("#show-warning");
     this.canvas = document.querySelector("#color-show-canvas");
     this.context = this.canvas.getContext("2d");
     this.audioFile = null;
@@ -169,6 +170,7 @@ class ColorShow {
     this.dataset = null;
     this.ready = false;
     this.displayedSample = null;
+    this.warningTimer = null;
 
     this.bindEvents();
     new ResizeObserver(() => this.draw(this.displayedSample)).observe(this.canvas);
@@ -231,7 +233,8 @@ class ColorShow {
     this.displayedSample = null;
     this.draw(null);
     this.updateControls();
-    this.setStatus("Choose matching audio and color data files");
+    this.hideWarning();
+    this.setStatus("Choose audio and color data files");
   }
 
   validatePair() {
@@ -243,14 +246,6 @@ class ColorShow {
     const { audio, formatVersion, samples, sampling } = this.dataset;
     if (!Number.isInteger(formatVersion) || formatVersion < 4) {
       this.setStatus("Color data must use format version 4 or later", true);
-      return;
-    }
-    if (!audio || audio.fileName !== this.audioFile.name) {
-      this.setStatus(`Color data expects ${audio?.fileName || "another audio file"}`, true);
-      return;
-    }
-    if (!Number.isFinite(audio.durationSeconds) || Math.abs(audio.durationSeconds - this.audio.duration) > 0.5) {
-      this.setStatus("Audio duration does not match the color data", true);
       return;
     }
     if (!Array.isArray(samples) || samples.length === 0) {
@@ -267,6 +262,16 @@ class ColorShow {
     this.stopButton.disabled = false;
     this.progress.disabled = false;
     this.setStatus("Ready");
+    const warnings = [];
+    if (!audio || audio.fileName !== this.audioFile.name) {
+      warnings.push("Filename differs");
+    }
+    if (!audio || !Number.isFinite(audio.durationSeconds) || Math.abs(audio.durationSeconds - this.audio.duration) > 0.5) {
+      warnings.push("Audio length differs");
+    }
+    if (warnings.length) {
+      this.showWarning(`${warnings.join(" and ")}. Missing color times will display no color.`);
+    }
     this.updateControls();
     this.updateFrame();
   }
@@ -420,7 +425,20 @@ class ColorShow {
     this.status.classList.toggle("is-error", isError);
   }
 
+  showWarning(message) {
+    clearTimeout(this.warningTimer);
+    this.warning.textContent = message;
+    this.warning.hidden = false;
+    this.warningTimer = window.setTimeout(() => this.hideWarning(), 5000);
+  }
+
+  hideWarning() {
+    clearTimeout(this.warningTimer);
+    this.warning.hidden = true;
+  }
+
   destroy() {
+    clearTimeout(this.warningTimer);
     if (this.audioUrl) {
       URL.revokeObjectURL(this.audioUrl);
     }

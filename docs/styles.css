@@ -370,6 +370,24 @@ button:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+.warning-popup {
+  position: fixed;
+  z-index: 1;
+  top: 24px;
+  right: 24px;
+  max-width: 340px;
+  padding: 10px 12px;
+  border: 1px solid #705c22;
+  border-radius: 8px;
+  color: #f2d98c;
+  background: #28210f;
+  font-size: 0.8rem;
+}
+
+.warning-popup[hidden] {
+  display: none;
+}
+
 #color-show-canvas {
   display: block;
   width: 100%;
@@ -430,5 +448,11 @@ button:disabled {
   #color-show-canvas {
     height: 56vh;
     min-height: 300px;
+  }
+
+  .warning-popup {
+    right: 16px;
+    left: 16px;
+    max-width: none;
   }
 }

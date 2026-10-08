@@ -116,10 +116,11 @@
           <button id="show-play" class="primary-button" type="button" disabled>Play</button>
           <button id="show-stop" class="secondary-button" type="button" disabled>Stop</button>
           <span id="show-time" class="show-time">0:00.0 / 0:00.0</span>
-          <span id="show-status" class="show-status" aria-live="polite">Choose matching audio and color data files</span>
+          <span id="show-status" class="show-status" aria-live="polite">Choose audio and color data files</span>
         </div>
       </div>
 
+      <div id="show-warning" class="warning-popup" role="alert" hidden></div>
       <canvas id="color-show-canvas" aria-label="Color show"></canvas>
       <audio id="show-audio" preload="metadata"></audio>
     </section>
