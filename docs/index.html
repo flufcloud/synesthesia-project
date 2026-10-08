@@ -9,19 +9,9 @@
 </head>
 <body>
   <main class="app-shell">
-    <header class="page-header">
-      <p class="eyebrow">Private, in-browser annotation</p>
-      <h1>Music Color Recorder</h1>
-      <p class="intro">Choose an audio file, record the colors you perceive, then download the color data.</p>
-      <p class="privacy-note">Your audio stays on this device. This page does not upload or store it.</p>
-    </header>
-
     <div class="workspace">
       <section class="audio-panel" aria-labelledby="audio-heading">
-        <div>
-          <p class="section-number">01</p>
-          <h2 id="audio-heading">Audio</h2>
-        </div>
+        <h2 id="audio-heading">Audio</h2>
 
         <label class="file-button" for="audio-file">Choose audio file</label>
         <input id="audio-file" class="visually-hidden" type="file" accept="audio/*">
@@ -50,13 +40,7 @@
       </section>
 
       <section class="colors-panel" aria-labelledby="colors-heading">
-        <div class="colors-heading">
-          <div>
-            <p class="section-number">02</p>
-            <h2 id="colors-heading">Colors</h2>
-          </div>
-          <p>Click or drag through each field while the music plays.</p>
-        </div>
+        <h2 id="colors-heading">Colors</h2>
 
         <div class="color-grid">
           <article class="color-card" data-channel="primary">
@@ -106,12 +90,6 @@
         </div>
       </section>
     </div>
-
-    <footer>
-      <span>10 samples per second</span>
-      <span>Dataset format 5</span>
-      <span>Local files only</span>
-    </footer>
   </main>
 
   <script src="./app.js" defer></script>
