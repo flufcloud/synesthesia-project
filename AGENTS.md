@@ -48,8 +48,9 @@ Stage 1 and the first small stage 3 color-show prototype are currently in scope.
 ## Color Show Requirements
 
 - Keep the color show separate from the data collector.
-- Require both an audio file and its matching color JSON before enabling playback.
-- Validate the pair using the audio filename and duration stored in the JSON.
+- Require both an audio file and color JSON before enabling playback.
+- Allow playback when the audio filename or duration differs from the color JSON. Show a warning and render uncovered timestamps with null colors.
+- Accept older dataset format versions when they decode successfully. Treat missing optional color fields as null.
 - Provide play, pause, stop, elapsed-time display, and a draggable playback-position slider.
 - Display the primary color as a solid dot in the center when present.
 - Display the secondary color as a gradient around the primary dot when present.

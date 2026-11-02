@@ -118,7 +118,7 @@ private final class ColorShowView: NSView {
 private final class ColorShowViewController: NSViewController {
     private let audioLabel = NSTextField(labelWithString: "No audio selected")
     private let dataLabel = NSTextField(labelWithString: "No color data selected")
-    private let statusLabel = NSTextField(labelWithString: "Choose matching audio and color data files")
+    private let statusLabel = NSTextField(labelWithString: "Choose audio and color data files")
     private let timeLabel = NSTextField(labelWithString: "0:00.0 / 0:00.0")
     private let playButton = NSButton(title: "Play", target: nil, action: nil)
     private let stopButton = NSButton(title: "Stop", target: nil, action: nil)
@@ -271,19 +271,7 @@ private final class ColorShowViewController: NSViewController {
         displayedSampleTime = nil
 
         guard let player = audioPlayer, let audioURL, let dataset else {
-            setStatus("Choose matching audio and color data files", color: .secondaryLabelColor)
-            return
-        }
-        guard dataset.formatVersion >= 4 else {
-            setStatus("Color data must use format version 4 or later", color: .systemRed)
-            return
-        }
-        guard dataset.audio.fileName == audioURL.lastPathComponent else {
-            setStatus("Color data expects \(dataset.audio.fileName)", color: .systemRed)
-            return
-        }
-        guard abs(dataset.audio.durationSeconds - player.duration) <= 0.5 else {
-            setStatus("Audio duration does not match the color data", color: .systemRed)
+            setStatus("Choose audio and color data files", color: .secondaryLabelColor)
             return
         }
         guard !dataset.samples.isEmpty else {
@@ -297,6 +285,18 @@ private final class ColorShowViewController: NSViewController {
         progressSlider.isEnabled = true
         setStatus("Ready", color: .systemGreen)
         updatePlayback()
+
+        var warnings: [String] = []
+        if dataset.audio.fileName != audioURL.lastPathComponent {
+            warnings.append("The audio filename differs from the color data.")
+        }
+        if abs(dataset.audio.durationSeconds - player.duration) > 0.5 {
+            warnings.append("The audio length differs from the color data.")
+        }
+        if !warnings.isEmpty {
+            warnings.append("Missing timestamps will display no color.")
+            showAlert(title: "Files differ", message: warnings.joined(separator: "\n"))
+        }
     }
 
     @objc private func togglePlayback() {

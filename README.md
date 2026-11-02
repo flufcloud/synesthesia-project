@@ -33,7 +33,7 @@ Run the separate playback app with:
 swift run ColorShow
 ```
 
-Choose an audio file and its matching color JSON. Playback remains disabled until both files are present and the stored audio filename and duration match.
+Choose an audio file and color JSON. Playback remains disabled until both files are present. Filename or duration differences produce a warning but do not block playback; uncovered timestamps display no color. Older decodable dataset versions remain supported, with missing optional colors treated as null.
 
 Use Play, Pause, Stop, or drag the progress bar to change the playback position.
 
